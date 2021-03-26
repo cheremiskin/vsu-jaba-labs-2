@@ -16,8 +16,12 @@ public class Calculator {
         priorities.put('-', 2);
         priorities.put('*', 1);
         priorities.put('/', 1);
+        priorities.put('^', 0);
     }
 
+    /**
+     * <h3>Обрабатывает следующий токен</h3>
+     */
     private static void readNextToken() throws Exception {
         char startToken = exp.charAt(0);
 
@@ -52,12 +56,18 @@ public class Calculator {
                 variables.put(startToken, num);
                 values.push(num);
             }
-        } else {
+        } else if (startToken != ' ') {
             throw new Exception("Unknown symbol:" + startToken);
         }
         exp.delete(0, endTokenPos);
     }
 
+    /**
+     * <h3>Выполнение заданой операции</h3>
+     * @param v1 - первый операнд
+     * @param v2 - второй операнд
+     * @param operator - оператор
+     */
     private static double executeOperation(double v1, double v2, char operator) throws Exception {
         switch (operator) {
             case '+':
@@ -68,36 +78,51 @@ public class Calculator {
                 return v1 * v2;
             case '/':
                 return v1 / v2;
+            case '^':
+                return Math.pow(v1, v2);
             default:
                 throw new Exception("Unknown operation");
         }
     }
 
+    /**
+     * <h3>Вычисляет значение выражения</h3>
+     * @param expression - выражение, значение которого нужно вычислить
+     */
     public static double calculate(String expression) throws Exception {
-        exp = new StringBuilder(expression);
-
-        exp.insert(0, '(');
-        exp.append(')');
+        exp = new StringBuilder('(' + expression + ')');
 
         while (exp.length() > 0) {
             readNextToken();
         }
 
-        if (values.size() > 1 || operators.size() > 0) {
+        if (values.size() > 1 || operators.size() > 1) {
             throw new Exception("Unable to calculate expression");
         }
 
         return values.pop();
     }
 
+    /**
+     * <h3>Проверяет является ли символ операцией</h3>
+     * @param symbol который нужно проверить
+     */
     private static boolean isOperator(char symbol) {
         return priorities.containsKey(symbol);
     }
 
+    /**
+     * <h3>Проверяет является ли символ цифрой</h3>
+     * @param symbol который нужно проверить
+     */
     private static boolean isDigit(char symbol) {
         return symbol >= '0' && symbol <= '9';
     }
 
+    /**
+     * <h3>Проверяет является ли символ переменной</h3>
+     * @param symbol который нужно проверить
+     */
     private static boolean isVariable(char symbol) {
         return symbol >= 'a' && symbol <= 'z' || symbol >= 'A' && symbol <='Z';
     }
