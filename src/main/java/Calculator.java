@@ -9,8 +9,10 @@ public class Calculator {
     private static final Map<Character, Integer> priorities = new HashMap<>();
     private static Map<Character, Double> variables = new HashMap<>();
 
+    private static char lastOperator = ' ';
+
     static {
-        priorities.put('(', -1);
+        priorities.put('(', 99);
         priorities.put(')', 100);
         priorities.put('+', 2);
         priorities.put('-', 2);
@@ -27,24 +29,41 @@ public class Calculator {
 
         int endTokenPos = 1;
         boolean wasDot = false;
+        boolean close = false;
 
         if (isOperator(startToken)) {
-            while (!operators.empty() && priorities.get(startToken) > priorities.get(operators.peek())) {
+            while (!operators.empty()
+                    && priorities.get(startToken) >= priorities.get(operators.peek())
+                    && startToken != '(' && startToken != ')'
+                    || startToken == ')' && !close) {
                 if (operators.peek() != '(') {
+                    if (values.size() < 2)
+                        throw new Exception("Unable to calculate expression");
                     double v2 = values.pop();
                     double v1 = values.pop();
                     values.push(executeOperation(v1, v2, operators.pop()));
-                } else {
+                } else if(!close) {
+                    close = true;
                     operators.pop();
                 }
             }
-            operators.push(startToken);
+            if (startToken != '(' && (values.size() == 0 || operators.size() > 0 && operators.peek() == '(' && lastOperator == '(')) {
+                if (priorities.get(startToken) == 2)
+                    values.push(0.0);
+                else if (priorities.get(startToken) < 2)
+                    values.push(1.0);
+            }
+            if (startToken != ')')
+                operators.push(startToken);
+
+
         } else if (isDigit(startToken)) {
             while (isDigit(exp.charAt(endTokenPos)) || exp.charAt(endTokenPos) == '.' && !wasDot) {
                 if (exp.charAt(endTokenPos) == '.') wasDot = true;
                 endTokenPos++;
             }
             values.push(Double.parseDouble(exp.substring(0, endTokenPos)));
+
         }
         else if (isVariable(startToken)) {
             if (variables.containsKey(startToken)) {
@@ -56,9 +75,11 @@ public class Calculator {
                 variables.put(startToken, num);
                 values.push(num);
             }
+
         } else if (startToken != ' ') {
             throw new Exception("Unknown symbol:" + startToken);
         }
+        lastOperator = startToken;
         exp.delete(0, endTokenPos);
     }
 
@@ -77,6 +98,7 @@ public class Calculator {
             case '*':
                 return v1 * v2;
             case '/':
+                if (v2 == 0) throw new Exception("Division by zero");
                 return v1 / v2;
             case '^':
                 return Math.pow(v1, v2);
